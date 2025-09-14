@@ -1,0 +1,86 @@
+sequenceDiagram
+    participant User as 👤 User/Browser
+    participant App as 🌐 Spring Boot App
+    participant Session as 🗄️ Session Store
+    participant Keycloak as 🔐 Keycloak Server
+    participant API as 📡 API Client
+
+    Note over User,API: WEB-BASED AUTHENTICATION FLOW (Session-Based)
+
+    User->>App: 1. GET /dashboard
+    App->>App: 2. Check Authentication
+    Note right of App: No session found
+    App->>User: 3. 302 Redirect to OAuth2 login
+
+    User->>App: 4. GET /oauth2/authorization/keycloak
+    App->>App: 5. Generate OAuth2 request + PKCE
+    App->>User: 6. 302 Redirect to Keycloak
+    Note right of App: Location: /realms/auth-demo-realm/protocol/<br/>openid-connect/auth?response_type=code<br/>&client_id=auth-demo-client&...
+
+    User->>Keycloak: 7. GET Authorization URL
+    Keycloak->>User: 8. Login Form
+
+    User->>Keycloak: 9. POST credentials (user/user123)
+    Keycloak->>Keycloak: 10. Validate Credentials
+    Keycloak->>Keycloak: 11. Generate Authorization Code
+    Keycloak->>User: 12. 302 Redirect with Auth Code
+    Note right of Keycloak: Location: /login/oauth2/code/keycloak<br/>?code=AUTH_CODE&state=STATE
+
+    User->>App: 13. GET /login/oauth2/code/keycloak?code=...
+    App->>Keycloak: 14. POST Token Exchange
+    Note right of App: grant_type=authorization_code<br/>code=AUTH_CODE<br/>client_secret=SECRET
+    Keycloak->>App: 15. Return Tokens (Access + Refresh + ID)
+
+    App->>App: 16. Create Spring Security Authentication
+    App->>Session: 17. Store OAuth2AuthorizedClient
+    Note right of Session: - SecurityContext<br/>- OAuth2AuthorizedClient<br/>- Access Token<br/>- Refresh Token
+    App->>App: 18. Create HTTP Session
+    App->>User: 19. Set-Cookie: JSESSIONID + 302 to /dashboard
+
+    User->>App: 20. GET /dashboard (with JSESSIONID)
+    App->>Session: 21. Load Session by JSESSIONID
+    Session->>App: 22. Return Authentication + Tokens
+    App->>App: 23. Populate SecurityContext
+    App->>User: 24. Return Dashboard HTML + Access Token
+
+    Note over User,API: API CALLS FROM WEB (Using Session-stored tokens)
+
+    User->>App: 25. XHR /api/user/profile (JSESSIONID cookie)
+    App->>Session: 26. Load OAuth2AuthorizedClient from Session
+    App->>App: 27. Check Token Expiration
+    alt Token Expired
+        App->>Keycloak: 28a. Refresh Token Request
+        Keycloak->>App: 28b. New Access Token
+        App->>Session: 28c. Update Session with New Token
+    end
+    App->>App: 29. Extract JWT + Validate + Create Authentication
+    App->>App: 30. Check @PreAuthorize("hasRole('USER')")
+    App->>User: 31. Return JSON Response
+
+    Note over User,API: DIRECT API AUTHENTICATION FLOW (Stateless JWT)
+
+    API->>Keycloak: 32. POST /protocol/openid-connect/token
+    Note right of API: grant_type=password<br/>client_id=auth-demo-client<br/>username=user&password=user123
+    Keycloak->>Keycloak: 33. Validate Credentials
+    Keycloak->>API: 34. Return JWT Access Token
+
+    API->>App: 35. GET /api/user/profile
+    Note right of API: Authorization: Bearer eyJhbGciOiJSUzI1NiIs...
+
+    App->>App: 36. Extract JWT from Authorization Header
+    App->>Keycloak: 37. Validate JWT Signature (via JWK Set)
+    Keycloak->>App: 38. JWT Valid + Public Key
+    App->>App: 39. Extract Claims (sub, roles, exp, etc.)
+    App->>App: 40. Create JwtAuthenticationToken
+    App->>App: 41. Check @PreAuthorize("hasRole('USER')")
+    App->>API: 42. Return JSON Response
+
+    Note over User,API: LOGOUT FLOWS
+
+    User->>App: 43. POST /logout (Web Session)
+    App->>Session: 44. Invalidate Session
+    App->>User: 45. Delete JSESSIONID Cookie + Redirect to /
+
+    API->>Keycloak: 46. POST /protocol/openid-connect/logout (API)
+    Note right of API: refresh_token=...
+    Keycloak->>API: 47. Token Revoked

@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auth Demo - OAuth2 + Keycloak</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .hero-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 80px 0;
+        }
+        .feature-card {
+            transition: transform 0.3s ease;
+            height: 100%;
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-shield-alt"></i> Auth Demo
+            </a>
+            
+            <div class="navbar-nav ms-auto">
+                <div th:if="${!isAuthenticated}">
+                    <a class="nav-link btn btn-light text-primary px-3 rounded" 
+                       th:href="@{/oauth2/authorization/keycloak}">
+                        <i class="fas fa-sign-in-alt"></i> Login with Keycloak
+                    </a>
+                </div>
+                <div th:if="${isAuthenticated}" class="navbar-text">
+                    Welcome back, <span th:text="${username}">User</span>!
+                    <a th:href="@{/dashboard}" class="btn btn-light btn-sm ms-2">
+                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Error Alert -->
+    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show m-3" role="alert">
+        <i class="fas fa-exclamation-triangle"></i>
+        <strong>Authentication Failed!</strong> Please check your credentials and try again.
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <!-- Hero Section -->
+    <section class="hero-section text-center">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 mx-auto">
+                    <h1 class="display-4 fw-bold mb-4">
+                        <i class="fas fa-shield-alt"></i>
+                        Secure OAuth2 Demo
+                    </h1>
+                    <p class="lead mb-4">
+                        A comprehensive demonstration of OAuth2 authentication and authorization 
+                        using Keycloak as the OpenID Connect provider with role-based access control.
+                    </p>
+                    
+                    <div th:if="${!isAuthenticated}">
+                        <a th:href="@{/oauth2/authorization/keycloak}" 
+                           class="btn btn-light btn-lg px-5 py-3 me-3">
+                            <i class="fas fa-sign-in-alt"></i> Get Started - Login
+                        </a>
+                        <a href="#features" class="btn btn-outline-light btn-lg px-5 py-3">
+                            <i class="fas fa-info-circle"></i> Learn More
+                        </a>
+                    </div>
+                    
+                    <div th:if="${isAuthenticated}">
+                        <a th:href="@{/dashboard}" class="btn btn-light btn-lg px-5 py-3">
+                            <i class="fas fa-tachometer-alt"></i> Go to Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="py-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 mx-auto text-center mb-5">
+                    <h2 class="display-5 fw-bold mb-3">Key Features</h2>
+                    <p class="lead text-muted">
+                        This demo showcases enterprise-grade authentication and authorization patterns.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="row g-4">
+                <!-- OAuth2 Feature -->
+                <div class="col-md-6 col-lg-4">
+                    <div class="card feature-card shadow-sm h-100">
+                        <div class="card-body text-center">
+                            <div class="mb-3">
+                                <i class="fas fa-key fa-3x text-primary"></i>
+                            </div>
+                            <h5 class="card-title">OAuth2 + OpenID Connect</h5>
+                            <p class="card-text">
+                                Complete OAuth2 authorization code flow with Keycloak as the 
+                                identity provider supporting JWT tokens and refresh tokens.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RBAC Feature -->
+                <div class="col-md-6 col-lg-4">
+                    <div class="card feature-card shadow-sm h-100">
+                        <div class="card-body text-center">
+                            <div class="mb-3">
+                                <i class="fas fa-users-cog fa-3x text-success"></i>
+                            </div>
+                            <h5 class="card-title">Role-Based Access Control</h5>
+                            <p class="card-text">
+                                Fine-grained authorization with ADMIN, MANAGER, USER, and GUEST roles
+                                controlling access to different API endpoints and web pages.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Session Management -->
+                <div class="col-md-6 col-lg-4">
+                    <div class="card feature-card shadow-sm h-100">
+                        <div class="card-body text-center">
+                            <div class="mb-3">
+                                <i class="fas fa-clock fa-3x text-warning"></i>
+                            </div>
+                            <h5 class="card-title">Session Management</h5>
+                            <p class="card-text">
+                                JWT-based stateless authentication with automatic token refresh
+                                and session expiration handling for both web and API access.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- API Endpoints -->
+                <div class="col-md-6 col-lg-4">
+                    <div class="card feature-card shadow-sm h-100">
+                        <div class="card-body text-center">
+                            <div class="mb-3">
+                                <i class="fas fa-code fa-3x text-info"></i>
+                            </div>
+                            <h5 class="card-title">RESTful APIs</h5>
+                            <p class="card-text">
+                                Sample REST endpoints demonstrating different authorization levels
+                                with comprehensive API testing and documentation.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Docker Setup -->
+                <div class="col-md-6 col-lg-4">
+                    <div class="card feature-card shadow-sm h-100">
+                        <div class="card-body text-center">
+                            <div class="mb-3">
+                                <i class="fab fa-docker fa-3x text-primary"></i>
+                            </div>
+                            <h5 class="card-title">Docker Compose</h5>
+                            <p class="card-text">
+                                Production-ready Docker setup with Keycloak, PostgreSQL,
+                                and automated realm configuration for easy deployment.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Security -->
+                <div class="col-md-6 col-lg-4">
+                    <div class="card feature-card shadow-sm h-100">
+                        <div class="card-body text-center">
+                            <div class="mb-3">
+                                <i class="fas fa-shield-alt fa-3x text-danger"></i>
+                            </div>
+                            <h5 class="card-title">Enterprise Security</h5>
+                            <p class="card-text">
+                                Production-ready security patterns with proper token validation,
+                                CSRF protection, and secure session management.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Test Users Section -->
+    <section class="py-5 bg-light">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 mx-auto text-center">
+                    <h3 class="fw-bold mb-4">Test Users Available</h3>
+                    <p class="mb-4">Use these test accounts to explore different role-based features:</p>
+                    
+                    <div class="row g-3">
+                        <div class="col-sm-6 col-lg-3">
+                            <div class="card border-danger">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-crown text-danger mb-2"></i>
+                                    <h6 class="card-title">ADMIN</h6>
+                                    <small>admin / admin123</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-lg-3">
+                            <div class="card border-warning">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-user-tie text-warning mb-2"></i>
+                                    <h6 class="card-title">MANAGER</h6>
+                                    <small>manager / manager123</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-lg-3">
+                            <div class="card border-success">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-user text-success mb-2"></i>
+                                    <h6 class="card-title">USER</h6>
+                                    <small>user / user123</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-lg-3">
+                            <div class="card border-secondary">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-user-friends text-secondary mb-2"></i>
+                                    <h6 class="card-title">GUEST</h6>
+                                    <small>guest / guest123</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4">
+        <div class="container text-center">
+            <p class="mb-2">
+                <i class="fas fa-code"></i> 
+                Built with Spring Boot + Kotlin + Keycloak + OAuth2
+            </p>
+            <p class="text-muted mb-0">
+                &copy; 2024 Auth Demo - OAuth2 + Keycloak Integration
+            </p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

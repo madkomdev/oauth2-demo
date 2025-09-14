@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Auth Demo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .dashboard-card {
+            transition: transform 0.2s ease;
+            cursor: pointer;
+        }
+        .dashboard-card:hover {
+            transform: translateY(-3px);
+        }
+        .api-demo {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .token-display {
+            word-break: break-all;
+            font-family: monospace;
+            font-size: 0.85em;
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" th:href="@{/}">
+                <i class="fas fa-shield-alt"></i> Auth Demo
+            </a>
+            
+            <div class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/profile}">
+                        <i class="fas fa-user"></i> Profile
+                    </a>
+                </li>
+                <li class="nav-item" th:if="${isAdmin}">
+                    <a class="nav-link" th:href="@{/admin}">
+                        <i class="fas fa-cog"></i> Admin
+                    </a>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-user-circle"></i> 
+                        <span th:text="${username}">User</span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" th:href="@{/profile}">
+                            <i class="fas fa-user"></i> Profile
+                        </a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <form th:action="@{/logout}" method="post" style="margin: 0;">
+                                <button type="submit" class="dropdown-item">
+                                    <i class="fas fa-sign-out-alt"></i> Logout
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </li>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mt-4">
+        <!-- Welcome Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card bg-gradient text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <div class="card-body">
+                        <h1 class="card-title mb-3">
+                            <i class="fas fa-tachometer-alt"></i>
+                            Welcome to Your Dashboard!
+                        </h1>
+                        <p class="card-text lead">
+                            Hello, <strong th:text="${firstName + ' ' + lastName}">User Name</strong>
+                            (<span th:text="${username}">username</span>)
+                        </p>
+                        <p class="card-text">
+                            <small>Your roles: 
+                                <span th:each="role, iter : ${roles}" class="badge bg-light text-dark me-1" 
+                                      th:text="${#strings.replace(role, 'ROLE_', '')}">ROLE</span>
+                            </small>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="row g-4 mb-5">
+            <!-- Profile Card -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card dashboard-card h-100 shadow-sm" onclick="location.href='/profile'">
+                    <div class="card-body text-center">
+                        <i class="fas fa-user fa-3x text-primary mb-3"></i>
+                        <h5 class="card-title">My Profile</h5>
+                        <p class="card-text">View and manage your profile information, tokens, and session details.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Manager Tools -->
+            <div class="col-md-6 col-lg-4" th:if="${isManager}">
+                <div class="card dashboard-card h-100 shadow-sm">
+                    <div class="card-body text-center">
+                        <i class="fas fa-users fa-3x text-warning mb-3"></i>
+                        <h5 class="card-title">Manager Tools</h5>
+                        <p class="card-text">Access user management, reports, and administrative functions.</p>
+                        <button class="btn btn-warning btn-sm" onclick="testApiEndpoint('/api/manager/reports', 'manager-result')">
+                            Test Manager API
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin Panel -->
+            <div class="col-md-6 col-lg-4" th:if="${isAdmin}">
+                <div class="card dashboard-card h-100 shadow-sm" onclick="location.href='/admin'">
+                    <div class="card-body text-center">
+                        <i class="fas fa-cog fa-3x text-danger mb-3"></i>
+                        <h5 class="card-title">Admin Panel</h5>
+                        <p class="card-text">System administration, user management, and system monitoring.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- API Testing Section -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-code"></i> API Testing Dashboard
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted">Test your access to different API endpoints based on your roles.</p>
+
+                        <!-- Access Token Display -->
+                        <div class="mb-4">
+                            <h6>Your Access Token:</h6>
+                            <div class="token-display" th:text="${accessToken}">
+                                Access token will be displayed here
+                            </div>
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle"></i>
+                                This token is automatically included in API requests below.
+                            </small>
+                        </div>
+
+                        <!-- API Test Buttons -->
+                        <div class="row g-3">
+                            <!-- Public API -->
+                            <div class="col-md-6 col-lg-4">
+                                <div class="api-demo">
+                                    <h6>Public API</h6>
+                                    <p class="text-muted small">No authentication required</p>
+                                    <button class="btn btn-success btn-sm w-100" 
+                                            onclick="testApiEndpoint('/api/public/info', 'public-result')">
+                                        <i class="fas fa-play"></i> Test Public API
+                                    </button>
+                                    <div id="public-result" class="mt-2"></div>
+                                </div>
+                            </div>
+
+                            <!-- User API -->
+                            <div class="col-md-6 col-lg-4">
+                                <div class="api-demo">
+                                    <h6>User API</h6>
+                                    <p class="text-muted small">Requires USER+ role</p>
+                                    <button class="btn btn-info btn-sm w-100" 
+                                            onclick="testApiEndpoint('/api/user/profile', 'user-result')">
+                                        <i class="fas fa-play"></i> Test User API
+                                    </button>
+                                    <div id="user-result" class="mt-2"></div>
+                                </div>
+                            </div>
+
+                            <!-- Manager API -->
+                            <div class="col-md-6 col-lg-4" th:if="${isManager}">
+                                <div class="api-demo">
+                                    <h6>Manager API</h6>
+                                    <p class="text-muted small">Requires MANAGER+ role</p>
+                                    <button class="btn btn-warning btn-sm w-100" 
+                                            onclick="testApiEndpoint('/api/manager/users', 'manager-result')">
+                                        <i class="fas fa-play"></i> Test Manager API
+                                    </button>
+                                    <div id="manager-result" class="mt-2"></div>
+                                </div>
+                            </div>
+
+                            <!-- Admin API -->
+                            <div class="col-md-6 col-lg-4" th:if="${isAdmin}">
+                                <div class="api-demo">
+                                    <h6>Admin API</h6>
+                                    <p class="text-muted small">Requires ADMIN role</p>
+                                    <button class="btn btn-danger btn-sm w-100" 
+                                            onclick="testApiEndpoint('/api/admin/system/info', 'admin-result')">
+                                        <i class="fas fa-play"></i> Test Admin API
+                                    </button>
+                                    <div id="admin-result" class="mt-2"></div>
+                                </div>
+                            </div>
+
+                            <!-- Unauthorized Test -->
+                            <div class="col-md-6 col-lg-4" th:unless="${isAdmin}">
+                                <div class="api-demo">
+                                    <h6>Admin API (Unauthorized)</h6>
+                                    <p class="text-muted small">Should return 403 Forbidden</p>
+                                    <button class="btn btn-outline-danger btn-sm w-100" 
+                                            onclick="testApiEndpoint('/api/admin/system/info', 'unauthorized-result')">
+                                        <i class="fas fa-ban"></i> Test Unauthorized
+                                    </button>
+                                    <div id="unauthorized-result" class="mt-2"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-light mt-5 py-4">
+        <div class="container text-center">
+            <p class="text-muted mb-0">
+                &copy; 2024 Auth Demo - OAuth2 + Keycloak Integration
+            </p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script th:inline="javascript">
+        const accessToken = /*[[${accessToken}]]*/ '';
+        
+        function testApiEndpoint(endpoint, resultId) {
+            const resultDiv = document.getElementById(resultId);
+            resultDiv.innerHTML = '<div class="spinner-border spinner-border-sm" role="status"></div> Testing...';
+            
+            const headers = {};
+            if (endpoint.startsWith('/api/') && !endpoint.startsWith('/api/public')) {
+                headers['Authorization'] = 'Bearer ' + accessToken;
+            }
+            
+            fetch(endpoint, {
+                method: 'GET',
+                headers: headers
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.json().then(data => ({
+                        status: response.status,
+                        data: data
+                    }));
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            })
+            .then(result => {
+                resultDiv.innerHTML = `
+                    <div class="alert alert-success py-2 mt-2">
+                        <small><strong>✓ Success (${result.status})</strong></small>
+                        <pre class="mb-0 mt-1" style="font-size: 0.75em; max-height: 100px; overflow-y: auto;">${JSON.stringify(result.data, null, 2)}</pre>
+                    </div>
+                `;
+            })
+            .catch(error => {
+                resultDiv.innerHTML = `
+                    <div class="alert alert-danger py-2 mt-2">
+                        <small><strong>✗ Error:</strong> ${error.message}</small>
+                    </div>
+                `;
+            });
+        }
+    </script>
+</body>
+</html>

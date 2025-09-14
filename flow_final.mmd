@@ -1,0 +1,106 @@
+graph TB
+subgraph "Client Layer"
+Browser[🌐 Web Browser<br/>JSESSIONID Cookie<br/>OAuth2 Redirects<br/>XHR API Calls]
+Mobile[📱 Mobile/API Client<br/>JWT Token Storage<br/>Direct API Access<br/>Bearer Headers]
+end
+
+subgraph "Spring Boot Application"
+subgraph "Controllers"
+WebCtrl[🎨 Web Controllers<br/>Landing, Dashboard, Profile, Admin]
+APICtrl[📡 API Controllers<br/>Public, User, Manager, Admin APIs]
+end
+
+subgraph "Security Layer"
+SecConfig[🔒 Security Configuration<br/>OAuth2 Login + Resource Server<br/>Session Management<br/>Role-based Authorization]
+
+JwtConverter[🎫 JWT Converter<br/>Extract Keycloak Roles<br/>Create Authentication Token]
+end
+
+subgraph "Session & Services"
+SessionStore[🗄️ Session Store<br/>OAuth2AuthorizedClient<br/>Access + Refresh Tokens<br/>SecurityContext]
+
+UserSvc[👤 User Service<br/>Profile Sync<br/>Role Management]
+
+SessionSvc[⏰ Session Service<br/>Token Validation<br/>Session Info]
+end
+
+subgraph "Data Access"
+UserRepo[📊 User Repository]
+RoleRepo[🏷️ Role Repository]
+end
+end
+
+subgraph "Keycloak Identity Provider"
+subgraph "Core Components"
+AuthRealm[🏰 auth-demo-realm<br/>Users, Roles, Clients]
+end
+
+subgraph "OAuth2 Endpoints"
+AuthEP[🔐 /auth<br/>Authorization Flow]
+TokenEP[🎫 /token<br/>Token Exchange]
+JWKEP[🔑 /certs<br/>JWT Validation Keys]
+LogoutEP[🚪 /logout<br/>Token Revocation]
+end
+end
+
+subgraph "Database Layer"
+H2DB[(🗃️ H2 Database<br/>User Profiles<br/>Role Assignments)]
+KeycloakDB[(🗃️ Keycloak DB<br/>User Credentials<br/>Sessions)]
+end
+
+%% WEB AUTHENTICATION FLOW
+Browser -->|1. GET /dashboard| WebCtrl
+WebCtrl -->|2. No Session| SecConfig
+SecConfig -->|3. OAuth2 Redirect| AuthEP
+AuthEP -->|4. Login Form| Browser
+Browser -->|5. Credentials| AuthEP
+AuthEP -->|6. Auth Code| WebCtrl
+WebCtrl -->|7. Code Exchange| TokenEP
+TokenEP -->|8. Tokens| SessionStore
+SessionStore -->|9. Session Created| Browser
+
+%% API AUTHENTICATION FLOW
+Mobile -->|1. Credentials| TokenEP
+TokenEP -->|2. JWT Token| Mobile
+Mobile -->|3. API Request + Bearer| APICtrl
+APICtrl -->|4. Validate JWT| JwtConverter
+JwtConverter -->|5. Verify Signature| JWKEP
+JwtConverter -->|6. Extract Roles| APICtrl
+
+%% WEB API CALLS WITH SESSION
+Browser -->|API Call + Cookie| APICtrl
+APICtrl -->|Get Token from Session| SessionStore
+
+%% SERVICE INTERACTIONS
+WebCtrl --> UserSvc
+APICtrl --> UserSvc
+UserSvc --> UserRepo
+UserSvc --> RoleRepo
+WebCtrl --> SessionSvc
+
+%% DATABASE CONNECTIONS
+UserRepo --> H2DB
+RoleRepo --> H2DB
+AuthRealm --> KeycloakDB
+
+%% TOKEN REFRESH FLOW
+SessionStore -->|Token Expired| TokenEP
+TokenEP -->|Fresh Token| SessionStore
+
+%% LOGOUT FLOWS
+Browser -->|Web Logout| SessionStore
+SessionStore -->|Invalidate| Browser
+Mobile -->|API Logout| LogoutEP
+
+%% STYLING
+classDef webFlow fill:#e1f5fe,stroke:#0277bd,stroke-width:2px
+classDef apiFlow fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+classDef keycloak fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+classDef security fill:#ffebee,stroke:#d32f2f,stroke-width:2px
+classDef data fill:#e8f5e8,stroke:#388e3c,stroke-width:2px
+
+class Browser,WebCtrl webFlow
+class Mobile,APICtrl apiFlow
+class AuthRealm,AuthEP,TokenEP,JWKEP,LogoutEP keycloak
+class SecConfig,JwtConverter,SessionStore security
+class UserSvc,SessionSvc,UserRepo,RoleRepo,H2DB,KeycloakDB data
