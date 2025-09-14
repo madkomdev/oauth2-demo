@@ -154,40 +154,6 @@ The system comes with pre-configured test users:
 - **Containerization**: Docker Compose
 - **Build Tool**: Gradle
 
-## 📁 Project Structure
-
-```
-auth-demo/
-├── src/main/kotlin/com/example/auth_demo/
-│   ├── config/
-│   │   ├── SecurityConfig.kt          # Security configuration
-│   │   └── DataInitializer.kt         # Default roles setup
-│   ├── controller/
-│   │   ├── PublicController.kt        # Public endpoints
-│   │   ├── UserController.kt          # User endpoints
-│   │   ├── ManagerController.kt       # Manager endpoints
-│   │   └── AdminController.kt         # Admin endpoints
-│   ├── domain/
-│   │   ├── User.kt                    # User entity
-│   │   └── Role.kt                    # Role entity & enum
-│   ├── repository/
-│   │   ├── UserRepository.kt          # User data access
-│   │   └── RoleRepository.kt          # Role data access
-│   ├── security/
-│   │   └── JwtAuthenticationConverter.kt # JWT claims processing
-│   ├── service/
-│   │   ├── UserService.kt             # User business logic
-│   │   └── SessionService.kt          # Session management
-│   └── AuthDemoApplication.kt         # Main application
-├── docker-compose.yml                 # Docker services setup
-├── keycloak/import/
-│   └── auth-demo-realm.json          # Keycloak realm configuration
-├── start-services.sh                 # Start infrastructure
-├── stop-services.sh                  # Stop infrastructure  
-├── setup-keycloak.sh                 # Configuration helper
-├── test-api.sh                       # API testing script
-└── README.md                         # This file
-```
 
 ## 🔧 Configuration
 
@@ -227,20 +193,6 @@ The Docker Compose setup includes:
 2. **Protected Endpoints**: Require valid JWT tokens
 3. **Role-based Access**: Different endpoints for different roles
 
-### Automated Testing
-
-The `test-api.sh` script provides comprehensive API testing:
-
-```bash
-./test-api.sh
-```
-
-This script:
-- Verifies all services are running
-- Tests public endpoints
-- Obtains JWT tokens for different users
-- Tests role-based access control
-- Provides detailed output
 
 ## 🔐 Security Features
 
@@ -263,25 +215,6 @@ This script:
 - **HTTP Security**: Path-based access control
 - **Role Hierarchy**: ADMIN > MANAGER > USER > GUEST
 
-## 🚀 Production Considerations
-
-### Security
-- [ ] Use HTTPS in production
-- [ ] Configure proper CORS policies
-- [ ] Use secrets management for client secrets
-- [ ] Enable CSRF protection for web applications
-
-### Performance
-- [ ] Configure connection pooling for databases
-- [ ] Enable JWT token caching
-- [ ] Configure Keycloak clustering
-- [ ] Add monitoring and metrics
-
-### Deployment
-- [ ] Use production-ready database configurations
-- [ ] Configure proper logging levels
-- [ ] Set up health checks and monitoring
-- [ ] Configure backup strategies
 
 ## 🛑 Stopping Services
 
@@ -293,26 +226,3 @@ This script:
 docker-compose down -v
 ```
 
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 🙋‍♂️ Support
-
-For questions or issues:
-1. Check the README and configuration
-2. Review the logs: `docker-compose logs keycloak`
-3. Test with the provided scripts
-4. Open an issue with detailed information
-
----
-
-**Happy coding! 🎉**
